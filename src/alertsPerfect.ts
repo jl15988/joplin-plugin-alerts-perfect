@@ -36,35 +36,59 @@ module.exports = {
 
                             return {
                                 type: alertType,
-                                value: titlePElem.outerHTML
+                                value: titlePElem.outerHTML,
+                                outValue: oneLineContent.replace(alertContent + "\n", "")
                             };
                         }
                     }
                     return {
                         type: "",
-                        value: oneLineContent
+                        value: oneLineContent,
+                        outValue: ""
                     };
                 }
 
                 markdownIt.renderer.rules.blockquote_open = function (tokens, idx, options, env, self) {
-                    let index = idx + 1;
+                    console.log(tokens)
+                    let index = idx;
                     let curToken = tokens[index];
                     let value = {
                         type: "",
-                        value: ""
+                        value: "",
+                        outValue: ""
                     };
-                    while (curToken && curToken.type !== 'blockquote_close' && !value.value && !value.type) {
-                        if (curToken.type === 'inline') {
-                            value = changeInline(tokens[index]);
-                            curToken.content = "";
-                            curToken.children[0].content = "";
-                        }
+                    do {
                         curToken = tokens[++index];
+                        if (curToken.type === 'inline' && !value.type) {
+                            value = changeInline(tokens[index]);
+                            if (value.type) {
+                                if (value.outValue) {
+                                    curToken.content = value.outValue;
+                                    curToken.children[0].content = value.outValue;
+                                }
+                                curToken.hidden = true;
+                                curToken.content = "";
+                                curToken.children[0].content = "";
+                                // tokens = tokens.filter((item, i) => i !== index);
+                            }
+                        } else if (curToken.type === 'blockquote_close' && value.type) {
+                            if (!options.relBlockquoteClose) {
+                                options.relBlockquoteClose = [];
+                            }
+                            options.relBlockquoteClose.push(index);
+                        }
+                    } while (curToken && curToken.type !== 'blockquote_close');
+                    if (!value.type || !value.value) {
+                        return self.renderToken(tokens, idx, options, env, self);
                     }
+                    console.log(`<div class='alerts-perfect-container ${value.type}'>${value.value}`)
                     return `<div class='alerts-perfect-container ${value.type}'>${value.value}`
                 }
                 markdownIt.renderer.rules.blockquote_close = function (tokens, idx, options, env, self) {
-                    return "</div>"
+                    if (options.relBlockquoteClose && options.relBlockquoteClose.includes(idx)) {
+                        return "</div>"
+                    }
+                    return self.renderToken(tokens, idx, options, env, self);
                 }
 
                 // markdownIt.renderer.rules.inline = function (tokens, idx, options, env, self) {
