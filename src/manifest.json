@@ -2,7 +2,7 @@
 	"manifest_version": 1,
 	"id": "jl15988.JoplinAlertsPerfectPlugin",
 	"app_min_version": "2.8",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"name": "AlertsPerfect",
 	"description": "Use blockquote syntax to display the perfect hint block.",
 	"author": "jl15988",

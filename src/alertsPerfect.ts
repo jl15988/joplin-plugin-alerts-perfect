@@ -34,42 +34,65 @@ module.exports = {
                             const typeTextElem = document.createTextNode(showTitle);
                             titlePElem.appendChild(typeTextElem);
 
+                            // 获取type行[!type]外内容
+                            let outValue = "";
+                            let backValue = "";
+                            outValue = oneLineContent.replace(alertContent, "");
+                            // 排除掉换行的
+                            const backLineIndex = oneLineContent.match(/\n/);
+                            if (backLineIndex) {
+                                backValue = outValue.slice(backLineIndex + 1);
+                                outValue = outValue.replace("\n" + backValue, "");
+                            }
+
                             return {
                                 type: alertType,
                                 value: titlePElem.outerHTML,
-                                outValue: oneLineContent.replace(alertContent + "\n", "")
+                                outValue: outValue,
+                                hasBack: !!backLineIndex,
+                                backValue: backValue
                             };
                         }
                     }
                     return {
                         type: "",
                         value: oneLineContent,
-                        outValue: ""
+                        outValue: "",
+                        hasBack: false,
+                        backValue: ""
                     };
                 }
 
                 markdownIt.renderer.rules.blockquote_open = function (tokens, idx, options, env, self) {
-                    console.log(tokens)
                     let index = idx;
                     let curToken = tokens[index];
                     let value = {
                         type: "",
                         value: "",
-                        outValue: ""
+                        outValue: "",
+                        hasBack: false,
+                        backValue: ""
                     };
                     do {
                         curToken = tokens[++index];
                         if (curToken.type === 'inline' && !value.type) {
                             value = changeInline(tokens[index]);
                             if (value.type) {
-                                if (value.outValue) {
-                                    curToken.content = value.outValue;
-                                    curToken.children[0].content = value.outValue;
+                                if (value.hasBack) {
+                                    // 修改内容
+                                    curToken.content = value.backValue;
+                                    curToken.children[0].hidden = true;
+                                    curToken.children[0].content = "";
+                                    curToken.children[1].hidden = true;
+                                    curToken.children[1].tag = "";
+                                    curToken.children[1].type = "";
+                                    // curToken.children = curToken.children.slice(0, 2);
+                                } else {
+                                    curToken.hidden = true;
+                                    curToken.children = [];
+                                    tokens[index - 1].hidden = true;
+                                    tokens[index + 1].hidden = true;
                                 }
-                                curToken.hidden = true;
-                                curToken.content = "";
-                                curToken.children[0].content = "";
-                                // tokens = tokens.filter((item, i) => i !== index);
                             }
                         } else if (curToken.type === 'blockquote_close' && value.type) {
                             if (!options.relBlockquoteClose) {
@@ -81,7 +104,6 @@ module.exports = {
                     if (!value.type || !value.value) {
                         return self.renderToken(tokens, idx, options, env, self);
                     }
-                    console.log(`<div class='alerts-perfect-container ${value.type}'>${value.value}`)
                     return `<div class='alerts-perfect-container ${value.type}'>${value.value}`
                 }
                 markdownIt.renderer.rules.blockquote_close = function (tokens, idx, options, env, self) {

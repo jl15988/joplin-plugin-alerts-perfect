@@ -9,6 +9,10 @@
     border-radius: 0.125rem;
 }
 
+.alerts-perfect-container :last-child {
+    margin-bottom: 0;
+}
+
 .alerts-perfect-container.success {
     border-color: #54bb19;
     background-color: #7be870;
